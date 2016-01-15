@@ -1,5 +1,6 @@
 package flixel.system;
-#if !doc
+
+#if !FLX_HAXE_BUILD
 import flash.display.Bitmap;
 import flash.display.BitmapData;
 import flash.display.BlendMode;
@@ -10,10 +11,7 @@ import flash.text.Font;
 import flash.text.TextField;
 import flash.text.TextFormat;
 import flixel.FlxG;
-import flixel.system.FlxPreloaderBase;
-
-@:font("assets/fonts/nokiafc22.ttf")
-class PreloaderFont extends Font {}
+import flixel.system.FlxBasePreloader;
 
 @:bitmap("assets/images/preloader/light.png")
 private class GraphicLogoLight extends BitmapData {}
@@ -26,7 +24,7 @@ private class GraphicLogoCorners extends BitmapData {}
  * You can make your own style of Preloader by overriding FlxPreloaderBase and using this class as an example.
  * To use your Preloader, simply change Project.xml to say: <app preloader="class.path.MyPreloader" />
  */
-class FlxPreloader extends FlxPreloaderBase
+class FlxPreloader extends FlxBasePreloader
 {
 	#if !js
 	
@@ -49,7 +47,6 @@ class FlxPreloader extends FlxPreloaderBase
 		// super(0, ["test.com", FlxPreloaderBase.LOCAL]); // example of site-locking
 		
 		// super(10); // example of long delay (10 seconds)
-		
 	}
 	
 	/**
@@ -75,7 +72,6 @@ class FlxPreloader extends FlxPreloaderBase
 		_bmpBar.y = _height - 11;
 		_buffer.addChild(_bmpBar);
 		
-		Font.registerFont(PreloaderFont);
 		_text = new TextField();
 		_text.defaultTextFormat = new TextFormat("Nokia Cellphone FC Small", 8, 0x5f6aff);
 		_text.embedFonts = true;
@@ -245,7 +241,6 @@ class FlxPreloader extends FlxPreloaderBase
 			_buffer.alpha = 1 - (Percent - 0.9) / 0.1;
 		}
 	}
-	
 	#end
 }
 #end

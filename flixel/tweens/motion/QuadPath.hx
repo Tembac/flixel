@@ -1,9 +1,8 @@
 ﻿package flixel.tweens.motion;
 
-import flixel.tweens.FlxTween;
-import flixel.util.FlxArrayUtil;
+import flixel.math.FlxPoint;
+import flixel.tweens.FlxTween.TweenOptions;
 import flixel.util.FlxDestroyUtil;
-import flixel.util.FlxPoint;
 
 /**
  * A series of points which will determine a path from the
@@ -104,9 +103,9 @@ class QuadPath extends Motion
 		return this;
 	}
 	
-	override private function update():Void
+	override private function update(elapsed:Float):Void
 	{
-		super.update();
+		super.update(elapsed);
 		var td:Float;
 		var tt:Float;
 		

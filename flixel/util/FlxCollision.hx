@@ -8,6 +8,8 @@ import flixel.FlxCamera;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.group.FlxGroup;
+import flixel.math.FlxAngle;
+import flixel.math.FlxMath;
 import flixel.tile.FlxTileblock;
 
 /**
@@ -18,9 +20,6 @@ import flixel.tile.FlxTileblock;
 */
 class FlxCollision 
 {
-	public static inline var CAMERA_WALL_OUTSIDE:Int = 0;
-	public static inline var CAMERA_WALL_INSIDE:Int = 1;
-	
 	// Optimization: Local static vars to reduce allocations
 	private static var pointA:Point = new Point();
 	private static var pointB:Point = new Point();
@@ -58,8 +57,8 @@ class FlxCollision
 		if (considerRotation)
 		{
 			// find the center of both sprites
-			centerA.setTo(Contact.origin.x, Contact.origin.y);
-			centerB.setTo(Target.origin.x, Target.origin.y);			
+			Contact.origin.copyToFlash(centerA);
+			Target.origin.copyToFlash(centerB);
 			
 			// now make a bounding box that allows for the sprite to be rotated in 360 degrees
 			boundsA.x = (pointA.x + centerA.x - centerA.length);
@@ -99,10 +98,11 @@ class FlxCollision
 		matrixB.identity();
 		matrixB.translate(-(intersect.x - boundsB.x), -(intersect.y - boundsB.y));
 		
-	#if FLX_RENDER_TILE
-		Contact.drawFrame();
-		Target.drawFrame();
-	#end
+		if (FlxG.renderTile)
+		{
+			Contact.drawFrame();
+			Target.drawFrame();
+		}
 		
 		var testA:BitmapData = Contact.framePixels;
 		var testB:BitmapData = Target.framePixels;
@@ -222,19 +222,20 @@ class FlxCollision
 			return false;
 		}
 		
-		#if FLX_RENDER_TILE
-		Target.drawFrame();
-		#end
+		if (FlxG.renderTile)
+		{
+			Target.drawFrame();
+		}
 		
 		// How deep is pointX/Y within the rect?
 		var test:BitmapData = Target.framePixels;
 		
-		var pixelAlpha:Int = 0;  
-		pixelAlpha = FlxColorUtil.getAlpha(test.getPixel32(Math.floor(PointX - Target.x), Math.floor(PointY - Target.y)));
+		var pixelAlpha = FlxColor.fromInt(test.getPixel32(Math.floor(PointX - Target.x), Math.floor(PointY - Target.y))).alpha;
 		
-		#if FLX_RENDER_TILE
-		pixelAlpha = Std.int(pixelAlpha * Target.alpha);
-		#end
+		if (FlxG.renderTile)
+		{
+			pixelAlpha = Std.int(pixelAlpha * Target.alpha);
+		}
 		
 		// How deep is pointX/Y within the rect?
 		if (pixelAlpha >= AlphaTolerance)
@@ -251,43 +252,44 @@ class FlxCollision
 	 * Creates a "wall" around the given camera which can be used for FlxSprite collision
 	 * 
 	 * @param	Camera				The FlxCamera to use for the wall bounds (can be FlxG.camera for the current one)
-	 * @param	Placement			CAMERA_WALL_OUTSIDE or CAMERA_WALL_INSIDE
+	 * @param	Placement			Whether to place the camera wall outside or inside
 	 * @param	Thickness			The thickness of the wall in pixels
 	 * @param	AdjustWorldBounds	Adjust the FlxG.worldBounds based on the wall (true) or leave alone (false)
 	 * @return	FlxGroup The 4 FlxTileblocks that are created are placed into this FlxGroup which should be added to your State
 	 */
-	public static function createCameraWall(Camera:FlxCamera, Placement:Int, Thickness:Int, AdjustWorldBounds:Bool = false):FlxGroup
+	public static function createCameraWall(Camera:FlxCamera, PlaceOutside:Bool = true, Thickness:Int, AdjustWorldBounds:Bool = false):FlxGroup
 	{
 		var left:FlxTileblock = null;
 		var right:FlxTileblock = null;
 		var top:FlxTileblock = null;
 		var bottom:FlxTileblock = null;
 		
-		switch (Placement)
+		if (PlaceOutside)
 		{
-			case FlxCollision.CAMERA_WALL_OUTSIDE:
-				left = new FlxTileblock(Math.floor(Camera.x - Thickness), Math.floor(Camera.y + Thickness), Thickness, Camera.height - (Thickness * 2));
-				right = new FlxTileblock(Math.floor(Camera.x + Camera.width), Math.floor(Camera.y + Thickness), Thickness, Camera.height - (Thickness * 2));
-				top = new FlxTileblock(Math.floor(Camera.x - Thickness), Math.floor(Camera.y - Thickness), Camera.width + Thickness * 2, Thickness);
-				bottom = new FlxTileblock(Math.floor(Camera.x - Thickness), Camera.height, Camera.width + Thickness * 2, Thickness);
-				
-				if (AdjustWorldBounds)
-				{
-					FlxG.worldBounds.set(Camera.x - Thickness, Camera.y - Thickness, Camera.width + Thickness * 2, Camera.height + Thickness * 2);
-				}
-			case FlxCollision.CAMERA_WALL_INSIDE:
-				left = new FlxTileblock(Math.floor(Camera.x), Math.floor(Camera.y + Thickness), Thickness, Camera.height - (Thickness * 2));
-				right = new FlxTileblock(Math.floor(Camera.x + Camera.width - Thickness), Math.floor(Camera.y + Thickness), Thickness, Camera.height - (Thickness * 2));
-				top = new FlxTileblock(Math.floor(Camera.x), Math.floor(Camera.y), Camera.width, Thickness);
-				bottom = new FlxTileblock(Math.floor(Camera.x), Camera.height - Thickness, Camera.width, Thickness);
-				
-				if (AdjustWorldBounds)
-				{
-					FlxG.worldBounds.set(Camera.x, Camera.y, Camera.width, Camera.height);
-				}
+			left = new FlxTileblock(Math.floor(Camera.x - Thickness), Math.floor(Camera.y + Thickness), Thickness, Camera.height - (Thickness * 2));
+			right = new FlxTileblock(Math.floor(Camera.x + Camera.width), Math.floor(Camera.y + Thickness), Thickness, Camera.height - (Thickness * 2));
+			top = new FlxTileblock(Math.floor(Camera.x - Thickness), Math.floor(Camera.y - Thickness), Camera.width + Thickness * 2, Thickness);
+			bottom = new FlxTileblock(Math.floor(Camera.x - Thickness), Camera.height, Camera.width + Thickness * 2, Thickness);
+			
+			if (AdjustWorldBounds)
+			{
+				FlxG.worldBounds.set(Camera.x - Thickness, Camera.y - Thickness, Camera.width + Thickness * 2, Camera.height + Thickness * 2);
+			}
+		}
+		else
+		{
+			left = new FlxTileblock(Math.floor(Camera.x), Math.floor(Camera.y + Thickness), Thickness, Camera.height - (Thickness * 2));
+			right = new FlxTileblock(Math.floor(Camera.x + Camera.width - Thickness), Math.floor(Camera.y + Thickness), Thickness, Camera.height - (Thickness * 2));
+			top = new FlxTileblock(Math.floor(Camera.x), Math.floor(Camera.y), Camera.width, Thickness);
+			bottom = new FlxTileblock(Math.floor(Camera.x), Camera.height - Thickness, Camera.width, Thickness);
+			
+			if (AdjustWorldBounds)
+			{
+				FlxG.worldBounds.set(Camera.x, Camera.y, Camera.width, Camera.height);
+			}
 		}
 		
-		var result:FlxGroup = new FlxGroup(4);
+		var result = new FlxGroup();
 		
 		result.add(left);
 		result.add(right);

@@ -1,8 +1,6 @@
 package flixel.system.debug;
-import flixel.util.FlxDestroyUtil;
 
 #if !FLX_NO_DEBUG
-
 import flash.display.BitmapData;
 import flash.display.Sprite;
 import flash.events.MouseEvent;
@@ -11,17 +9,22 @@ import flash.geom.Rectangle;
 import flash.text.TextField;
 import flash.text.TextFieldAutoSize;
 import flash.text.TextFormat;
+import openfl.display.DisplayObject;
 import flixel.FlxG;
-import flixel.system.debug.Console;
-import flixel.system.debug.Log;
-import flixel.system.debug.Stats;
+import flixel.system.debug.console.Console;
+import flixel.system.debug.log.Log;
+import flixel.system.debug.stats.Stats;
 import flixel.system.debug.VCR;
-import flixel.system.debug.Watch;
+import flixel.system.debug.watch.Watch;
+import flixel.system.debug.watch.Tracker;
+import flixel.system.debug.completion.CompletionList;
+import flixel.system.debug.log.BitmapLog;
 import flixel.system.FlxAssets;
 import flixel.system.ui.FlxSystemButton;
 import flixel.util.FlxArrayUtil;
-import flixel.util.FlxColor;
 import flixel.util.FlxStringUtil;
+import flixel.util.FlxColor;
+import flixel.util.FlxDestroyUtil;
 
 @:bitmap("assets/images/debugger/flixel.png")
 private class GraphicFlixel extends BitmapData {}
@@ -71,6 +74,7 @@ class FlxDebugger extends Sprite
 	public var bitmapLog:BitmapLog;
 	public var vcr:VCR;
 	public var console:Console;
+	private var completionList:CompletionList;
 	
 	/**
 	 * Whether the mouse is currently over one of the debugger windows or not.
@@ -80,9 +84,9 @@ class FlxDebugger extends Sprite
 	/**
 	 * Internal, tracks what debugger window layout user has currently selected.
 	 */
-	private var _layout:DebuggerLayout;
+	private var _layout:FlxDebuggerLayout;
 	/**
-	 * Internal, stores width and height of the Flash Player window.
+	 * Internal, stores width and height of the game.
 	 */
 	private var _screen:Point;
 	/**
@@ -171,7 +175,7 @@ class FlxDebugger extends Sprite
 	 * 
 	 * @param   Layout   The layout codes can be found in FlxDebugger, for example FlxDebugger.MICRO
 	 */
-	public inline function setLayout(Layout:DebuggerLayout):Void
+	public inline function setLayout(Layout:FlxDebuggerLayout):Void
 	{
 		_layout = Layout;
 		resetLayout();
@@ -183,7 +187,7 @@ class FlxDebugger extends Sprite
 	 */
 	public function resetLayout():Void
 	{
-		switch(_layout)
+		switch (_layout)
 		{
 			case MICRO:
 				log.resize(_screen.x / 4, 68);
@@ -257,10 +261,9 @@ class FlxDebugger extends Sprite
 		_topBar.width = FlxG.stage.stageWidth;
 		resetButtonLayout();
 		resetLayout();
-		scaleX = 1 / FlxG.game.scaleX;
-		scaleY = 1 / FlxG.game.scaleY;
-		x = -FlxG.game.x * scaleX;
-		y = -FlxG.game.y * scaleY;
+		scaleX = scaleY = 1;
+		x = -FlxG.scaleMode.offset.x;
+		y = -FlxG.scaleMode.offset.y;
 	}
 	
 	private function updateBounds():Void
@@ -317,7 +320,7 @@ class FlxDebugger extends Sprite
 	 * @param   UpdateLayout   Whether to update the button layout.
 	 * @return  The added button.
 	 */
-	public function addButton(Position:ButtonAlignment, ?Icon:BitmapData, ?UpHandler:Void->Void, ToggleMode:Bool = false, UpdateLayout:Bool = false):FlxSystemButton
+	public function addButton(Position:FlxButtonAlignment, ?Icon:BitmapData, ?UpHandler:Void->Void, ToggleMode:Bool = false, UpdateLayout:Bool = false):FlxSystemButton
 	{
 		var button = new FlxSystemButton(Icon, UpHandler, ToggleMode);
 		
@@ -370,7 +373,7 @@ class FlxDebugger extends Sprite
 		window.toggleButton = button;
 		button.toggled = !window.visible;
 	}
-	
+
 	public inline function addWindow(window:Window):Window
 	{
 		_windows.push(window);
@@ -402,6 +405,7 @@ class FlxDebugger extends Sprite
 	private function new(Width:Float, Height:Float)
 	{
 		super();
+		
 		visible = false;
 		_layout = STANDARD;
 		_screen = new Point();
@@ -431,13 +435,14 @@ class FlxDebugger extends Sprite
 		addWindow(log = new Log());
 		addWindow(bitmapLog = new BitmapLog());
 		addWindow(watch = new Watch());
-		addWindow(console = new Console());
+		completionList = new CompletionList(5);
+		addWindow(console = new Console(completionList));
 		addWindow(stats = new Stats());
 		
 		vcr = new VCR(this);
 		
 		addButton(LEFT, new GraphicFlixel(0, 0), openHomepage);
-		addButton(LEFT, null, openHomepage).addChild(txt);
+		addButton(LEFT, null, openGitHub).addChild(txt);
 		
 		addWindowToggleButton(bitmapLog, GraphicBitmapLog);
 		addWindowToggleButton(log, GraphicLog);
@@ -454,12 +459,23 @@ class FlxDebugger extends Sprite
 		addButton(MIDDLE).addChild(vcr.runtimeDisplay);
 		#end
 		
+		addChild(completionList);
+		
 		onResize(Width, Height);
 		
 		addEventListener(MouseEvent.MOUSE_OVER, onMouseOver);
 		addEventListener(MouseEvent.MOUSE_OUT, onMouseOut);
 		
 		FlxG.signals.stateSwitched.add(Tracker.onStateSwitch);
+	}
+	
+	override public function addChild(child:DisplayObject):DisplayObject 
+	{
+		var result = super.addChild(child);
+		// hack to make sure the completion list always stays on top
+		if (completionList != null)
+			super.addChild(completionList);
+		return result;
 	}
 	
 	/**
@@ -506,16 +522,28 @@ class FlxDebugger extends Sprite
 	{
 		FlxG.openURL("http://www.haxeflixel.com");
 	}
+	
+	private inline function openGitHub():Void
+	{
+		var url = "https://github.com/HaxeFlixel/flixel";
+		if (FlxVersion.sha != "")
+		{
+			url += '/commit/${FlxVersion.sha}';
+		}
+		FlxG.openURL(url);
+	}
 }
 #end
 
-enum ButtonAlignment {
+enum FlxButtonAlignment
+{
 	LEFT;
 	MIDDLE;
 	RIGHT;
 }
 
-enum DebuggerLayout {
+enum FlxDebuggerLayout
+{
 	STANDARD;
 	MICRO;
 	BIG;

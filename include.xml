@@ -2,19 +2,39 @@
 <project>
 	<icon path="assets/images/logo/HaxeFlixel.svg" />
 	
-	<assets path="assets/sounds" include="*.mp3" if="web" />
-	<assets path="assets/sounds" include="*.ogg" unless="flash" />
+	<assets path="assets/sounds" include="*.ogg" if="html5" unless="unit-test" />
+	<assets path="assets/sounds" include="*.mp3" if="flash" embed="true" />
+	<assets path="assets/sounds" include="*.ogg" unless="flash || html5" embed="true" />
 	<assets path="assets/fonts/nokiafc22.ttf" embed="true" />
-	<assets path="assets/fonts/arial.ttf" embed="true" unless="FLX_NO_DEBUG" />
+	<assets path="assets/fonts/monsterrat.ttf" embed="true" />
 	
 	<set name="legacy" unless="next" />
 	
-	<haxelib name="openfl" />
+	<haxelib name="openfl" unless="create" />
+	<haxelib name="hscript" unless="create||coverage2" optional="true" />
 	
-	<!-- Allow this setting to be overridden on the command-line -->
-	<set name="FLX_RENDER_BLIT" if="flash || html5" unless="FLX_RENDER_TILE" />
-	<set name="FLX_RENDER_TILE" unless="FLX_RENDER_BLIT" />
+	<haxeflag name="--macro" value="flixel.system.macros.FlxDefines.run()" />
 	
-	<haxedef name="FLX_RENDER_BLIT" if="FLX_RENDER_BLIT" />
-	<haxedef name="FLX_RENDER_TILE" if="FLX_RENDER_TILE" />
+	<section if="setup">
+		<haxelib name="hscript" />
+		<haxelib name="systools" />
+		<haxelib name="flixel-addons" />
+		<haxelib name="flixel-ui" />
+		<haxelib name="flixel-demos" />
+		<haxelib name="flixel-tools" />
+		<haxelib name="flixel-templates" />
+	</section>
+	
+	<section if="create">
+		<sample path="${haxelib:flixel-demos}/Arcade Classics" />
+		<sample path="${haxelib:flixel-demos}/Editors" />
+		<sample path="${haxelib:flixel-demos}/Effects" />
+		<sample path="${haxelib:flixel-demos}/Flixel Features" />
+		<sample path="${haxelib:flixel-demos}/Input" />
+		<sample path="${haxelib:flixel-demos}/Other" />
+		<sample path="${haxelib:flixel-demos}/Performance" />
+		<sample path="${haxelib:flixel-demos}/Platformers" />
+		<sample path="${haxelib:flixel-demos}/Tutorials" />
+		<sample path="${haxelib:flixel-demos}/User Interface" />
+	</section>
 </project>

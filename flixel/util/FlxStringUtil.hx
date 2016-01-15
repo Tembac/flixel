@@ -2,11 +2,10 @@ package flixel.util;
 
 import flash.display.BitmapData;
 import flash.geom.Matrix;
-import flash.Lib;
-import flash.net.URLRequest;
 import flixel.FlxG;
-import flixel.interfaces.IFlxDestroyable;
+import flixel.math.FlxMath;
 import flixel.system.FlxAssets;
+import flixel.util.FlxDestroyUtil.IFlxDestroyable;
 using StringTools;
 
 /**
@@ -399,11 +398,11 @@ class FlxStringUtil
 	 * 
 	 * @param	Bitmap		A Flash BitmapData object, preferably black and white.
 	 * @param	Invert		Load white pixels as solid instead.
-	 * @param	Scale		Default is 1.  Scale of 2 means each pixel forms a 2x2 block of tiles, and so on.
-	 * @param  	ColorMap  	An array of color values (0xAARRGGBB) in the order they're intended to be assigned as indices
+	 * @param	Scale		Default is 1. Scale of 2 means each pixel forms a 2x2 block of tiles, and so on.
+	 * @param	ColorMap	An array of color values (alpha values are ignored) in the order they're intended to be assigned as indices
 	 * @return	A comma-separated string containing the level data in a FlxTilemap-friendly format.
 	 */
-	public static function bitmapToCSV(Bitmap:BitmapData, Invert:Bool = false, Scale:Int = 1, ?ColorMap:Array<Int>):String
+	public static function bitmapToCSV(Bitmap:BitmapData, Invert:Bool = false, Scale:Int = 1, ?ColorMap:Array<FlxColor>):String
 	{
 		if (Scale < 1) 
 		{
@@ -416,7 +415,7 @@ class FlxStringUtil
 			var bd:BitmapData = Bitmap;
 			Bitmap = new BitmapData(Bitmap.width * Scale, Bitmap.height * Scale);
 			
-			#if js
+			#if !flash
 			var bdW:Int = bd.width;
 			var bdH:Int = bd.height;
 			var pCol:Int = 0;
@@ -441,6 +440,14 @@ class FlxStringUtil
 			mtx.scale(Scale, Scale);
 			Bitmap.draw(bd, mtx);
 			#end
+		}
+		
+		if (ColorMap != null)
+		{
+			for (i in 0...ColorMap.length)
+			{
+				ColorMap[i] = ColorMap[i].to24Bit();
+			}
 		}
 		
 		// Walk image and export pixel values
@@ -506,9 +513,10 @@ class FlxStringUtil
 	 * @param	ImageFile	An embedded graphic, preferably black and white.
 	 * @param	Invert		Load white pixels as solid instead.
 	 * @param	Scale		Default is 1.  Scale of 2 means each pixel forms a 2x2 block of tiles, and so on.
+	 * @param	ColorMap	An array of color values (alpha values are ignored) in the order they're intended to be assigned as indices
 	 * @return	A comma-separated string containing the level data in a FlxTilemap-friendly format.
 	 */
-	public static function imageToCSV(ImageFile:Dynamic, Invert:Bool = false, Scale:Int = 1):String
+	public static function imageToCSV(ImageFile:Dynamic, Invert:Bool = false, Scale:Int = 1, ?ColorMap:Array<FlxColor>):String
 	{
 		var tempBitmapData:BitmapData;
 		
@@ -521,7 +529,7 @@ class FlxStringUtil
 			tempBitmapData = (Type.createInstance(ImageFile, [])).bitmapData;
 		}
 		
-		return bitmapToCSV(tempBitmapData, Invert, Scale);
+		return bitmapToCSV(tempBitmapData, Invert, Scale, ColorMap);
 	}
 	
 	/**
@@ -547,6 +555,24 @@ class FlxStringUtil
 		// remove the | of the last item, we don't want that at the end
 		output = output.substr(0, output.length - 2).trim();
 		return (output + ")");
+	}
+	
+	public static inline function contains(s:String, str:String):Bool
+	{
+		return s.indexOf(str) != -1;
+	}
+	
+	public static function sortAlphabetically(list:Array<String>):Array<String>
+	{
+		list.sort(function(a, b)
+		{
+			a = a.toLowerCase();
+			b = b.toLowerCase();
+			if (a < b) return -1;
+			if (a > b) return 1;
+			return 0;
+		});
+		return list;
 	}
 }
 

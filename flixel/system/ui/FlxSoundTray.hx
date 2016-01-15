@@ -10,10 +10,8 @@ import flash.text.GridFitType;
 import flash.text.TextField;
 import flash.text.TextFormat;
 import flash.text.TextFormatAlign;
-import flixel.FlxCamera;
 import flixel.FlxG;
 import flixel.system.FlxAssets;
-import flixel.system.FlxSound;
 import flixel.util.FlxColor;
 
 /**
@@ -44,6 +42,7 @@ class FlxSoundTray extends Sprite
 	/**
 	 * Sets up the "sound tray", the little volume meter that pops down sometimes.
 	 */
+	@:keep
 	public function new()
 	{
 		super();
@@ -69,7 +68,7 @@ class FlxSoundTray extends Sprite
 		#else
 		
 		#end
-		var dtf:TextFormat = new TextFormat(FlxAssets.FONT_DEFAULT, 8, 0xffffff);
+		var dtf:TextFormat = new TextFormat(FlxAssets.FONT_DEFAULT, 10, 0xffffff);
 		dtf.align = TextFormatAlign.CENTER;
 		text.defaultTextFormat = dtf;
 		addChild(text);
@@ -160,10 +159,10 @@ class FlxSoundTray extends Sprite
 	
 	public function screenCenter():Void
 	{
-		scaleX = _defaultScale / FlxG.game.scaleX;
-		scaleY = _defaultScale / FlxG.game.scaleY;
+		scaleX = _defaultScale;
+		scaleY = _defaultScale;
 		
-		x = (0.5 * (Lib.current.stage.stageWidth - _width * _defaultScale) - FlxG.game.x) / FlxG.game.scaleX;
+		x = (0.5 * (Lib.current.stage.stageWidth - _width * _defaultScale) - FlxG.game.x);
 	}
 }
 #end

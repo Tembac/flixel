@@ -25,7 +25,7 @@ class FlxSplash extends FlxState
 	private var _colors:Array<Int>;
 	private var _functions:Array<Void->Void>;
 	private var _curPart:Int = 0;
-	private var _cachedBgColor:Int;
+	private var _cachedBgColor:FlxColor;
 	private var _cachedTimestep:Bool;
 	private var _cachedAutoPause:Bool;
 	
@@ -51,7 +51,7 @@ class FlxSplash extends FlxState
 		
 		for (time in _times)
 		{
-			new FlxTimer(time, timerCallback);
+			new FlxTimer().start(time, timerCallback);
 		}
 		
 		var stageWidth:Int = Lib.current.stage.stageWidth;
@@ -113,7 +113,7 @@ class FlxSplash extends FlxState
 		if (_curPart == 5)
 		{
 			// Make the logo a tad bit longer, so our users fully appreciate our hard work :D
-			FlxTween.tween(_sprite, { alpha: 0 }, 3.0, { ease: FlxEase.quadOut, complete: onComplete } );
+			FlxTween.tween(_sprite, { alpha: 0 }, 3.0, { ease: FlxEase.quadOut, onComplete: onComplete } );
 			FlxTween.tween(_text, { alpha: 0 }, 3.0, { ease: FlxEase.quadOut } );
 		}
 	}

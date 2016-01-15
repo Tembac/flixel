@@ -1,11 +1,13 @@
 package flixel;
 
 import flixel.group.FlxGroup;
+import flixel.util.FlxColor;
 
 /**
  * This is the basic game "state" object - e.g. in a simple game you might have a menu state and a play state.
  * It is for all intents and purpose a fancy FlxGroup. And really, it's not even that fancy.
  */
+@:keepSub // workaround for HaxeFoundation/haxe#3749
 class FlxState extends FlxGroup
 {
 	/**
@@ -28,7 +30,7 @@ class FlxState extends FlxGroup
 	/**
 	 * The natural background color the cameras default to. In AARRGGBB format.
 	 */
-	public var bgColor(get, set):Int;
+	public var bgColor(get, set):FlxColor;
 	
 	/**
 	 * Current substate. Substates also can be nested.
@@ -64,7 +66,7 @@ class FlxState extends FlxGroup
 		}
 	}
 	
-	public inline function openSubState(SubState:FlxSubState):Void
+	public function openSubState(SubState:FlxSubState):Void
 	{
 		_requestSubStateReset = true;
 		_requestedSubState = SubState;
@@ -73,7 +75,7 @@ class FlxState extends FlxGroup
 	/**
 	 * Closes the substate of this state, if one exists.
 	 */
-	public inline function closeSubState():Void
+	public function closeSubState():Void
 	{
 		_requestSubStateReset = true;
 	}
@@ -105,7 +107,7 @@ class FlxState extends FlxGroup
 			//Reset the input so things like "justPressed" won't interfere
 			if (!persistentUpdate)
 			{
-				FlxG.inputs.reset();
+				FlxG.inputs.onStateSwitch();
 			}
 			
 			if (!subState._created)
@@ -126,16 +128,27 @@ class FlxState extends FlxGroup
 		}
 		super.destroy();
 	}
-
+	
 	/**
-	 * This method is called after application losts its focus.
-	 * Can be useful if you using third part libraries, such as tweening engines.
+	 * Called from `FlxG.switchState()`. If `false` is returned, the state
+	 * switch is cancelled - the default implementation returns `true`.
+	 * 
+	 * Useful for customizing state switches, e.g. for transition effects.
+	 */
+	public function switchTo(nextState:FlxState):Bool
+	{
+		return true;
+	}
+	
+	/**
+	 * This method is called after the game loses focus.
+	 * Can be useful for third party libraries, such as tweening engines.
 	 */
 	public function onFocusLost():Void {}
 
 	/**
-	 * This method is called after application gets focus.
-	 * Can be useful if you using third part libraries, such as tweening engines.
+	 * This method is called after the game receives focus.
+	 * Can be useful for third party libraries, such as tweening engines.
 	 */
 	public function onFocus():Void {}
 
@@ -148,11 +161,11 @@ class FlxState extends FlxGroup
 	public function onResize(Width:Int, Height:Int):Void {}
 	
 	@:allow(flixel.FlxGame)
-	private function tryUpdate():Void
+	private function tryUpdate(elapsed:Float):Void
 	{
 		if (persistentUpdate || (subState == null))
 		{
-			update();
+			update(elapsed);
 		}
 		
 		if (_requestSubStateReset)
@@ -162,16 +175,16 @@ class FlxState extends FlxGroup
 		}
 		else if (subState != null)
 		{
-			subState.tryUpdate();
+			subState.tryUpdate(elapsed);
 		}
 	}
 
-	private function get_bgColor():Int
+	private function get_bgColor():FlxColor
 	{
 		return FlxG.cameras.bgColor;
 	}
 
-	private function set_bgColor(Value:Int):Int
+	private function set_bgColor(Value:FlxColor):FlxColor
 	{
 		return FlxG.cameras.bgColor = Value;
 	}

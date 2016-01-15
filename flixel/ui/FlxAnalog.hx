@@ -1,22 +1,14 @@
 package flixel.ui;
 
-import flash.display.BitmapData;
-import flash.geom.Rectangle;
-import flash.ui.Keyboard;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.group.FlxSpriteGroup;
 import flixel.input.touch.FlxTouch;
-import flixel.util.FlxAngle;
+import flixel.math.FlxAngle;
+import flixel.math.FlxPoint;
+import flixel.math.FlxRect;
+import flixel.system.FlxAssets;
 import flixel.util.FlxDestroyUtil;
-import flixel.util.FlxPoint;
-import flixel.util.FlxRect;
-
-@:bitmap("assets/images/ui/analog/base.png")
-private class GraphicBase extends BitmapData {}
-
-@:bitmap("assets/images/ui/analog/thumb.png")
-private class GraphicThumb extends BitmapData {}
 
 /**
  * A virtual thumbstick - useful for input on mobile devices.
@@ -87,7 +79,7 @@ class FlxAnalog extends FlxSpriteGroup
 	/**
 	 * The radius in which the stick can move.
 	 */ 
-	private var _radius:Float;
+	private var _radius:Float = 0;
 	private var _direction:Float = 0;
 	private var _amount:Float = 0;		
 	/**
@@ -100,7 +92,7 @@ class FlxAnalog extends FlxSpriteGroup
 	 *  
 	 * @param	X		The X-coordinate of the point in space.
  	 * @param	Y		The Y-coordinate of the point in space.
- 	 * @param	radius	The radius where the thumb can move. If 0, the background will be use as radius.
+ 	 * @param	radius	The radius where the thumb can move. If 0, half the background's width will be used as radius.
  	 * @param	ease	The duration of the easing. The value must be between 0 and 1.
 	 */
 	public function new(X:Float = 0, Y:Float = 0, Radius:Float = 0, Ease:Float = 0.25)
@@ -131,7 +123,9 @@ class FlxAnalog extends FlxSpriteGroup
 	private function createBase():Void
 	{
 		base = new FlxSprite(x, y);
-		base.loadGraphic(GraphicBase);
+		base.frames = FlxAssets.getVirtualInputFrames();
+		base.animation.frameName = "base";
+		base.resetSizeFromFrame();
 		base.x += -base.width * 0.5;
 		base.y += -base.height * 0.5;
 		base.scrollFactor.set();
@@ -151,7 +145,9 @@ class FlxAnalog extends FlxSpriteGroup
 	private function createThumb():Void 
 	{
 		thumb = new FlxSprite(x, y);
-		thumb.loadGraphic(GraphicThumb);
+		thumb.frames = FlxAssets.getVirtualInputFrames();
+		thumb.animation.frameName = "thumb";
+		thumb.resetSizeFromFrame();
 		thumb.scrollFactor.set();
 		thumb.solid = false;
 		
@@ -203,7 +199,7 @@ class FlxAnalog extends FlxSpriteGroup
 	/**
 	 * Update the behavior. 
 	 */
-	override public function update():Void 
+	override public function update(elapsed:Float):Void 
 	{
 		#if !FLX_NO_TOUCH
 		var touch:FlxTouch = null;
@@ -245,9 +241,7 @@ class FlxAnalog extends FlxSpriteGroup
 					break;
 				}
 			}
-		#end
-		
-		#if !FLX_NO_MOUSE
+		#elseif !FLX_NO_MOUSE
 			_point.set(FlxG.mouse.screenX, FlxG.mouse.screenY);
 			
 			if (updateAnalog(_point, FlxG.mouse.pressed, FlxG.mouse.justPressed, FlxG.mouse.justReleased) == false)
@@ -278,7 +272,7 @@ class FlxAnalog extends FlxSpriteGroup
 		_tempTouches.splice(0, _tempTouches.length);
 		#end
 		
-		super.update();
+		super.update(elapsed);
 	}
 	
 	private function updateAnalog(TouchPoint:FlxPoint, Pressed:Bool, JustPressed:Bool, JustReleased:Bool, ?Touch:FlxTouch):Bool
@@ -401,9 +395,7 @@ class FlxAnalog extends FlxSpriteGroup
 		{
 			return _currentTouch.justPressed && status == PRESSED;
 		}
-		#end
-		
-		#if !FLX_NO_MOUSE
+		#elseif !FLX_NO_MOUSE
 		return FlxG.mouse.justPressed && status == PRESSED;
 		#end
 		
@@ -422,9 +414,7 @@ class FlxAnalog extends FlxSpriteGroup
 		{
 			return _currentTouch.justReleased && status == HIGHLIGHT;
 		}
-		#end
-		
-		#if !FLX_NO_MOUSE
+		#elseif !FLX_NO_MOUSE
 		return FlxG.mouse.justReleased && status == HIGHLIGHT;
 		#end
 		

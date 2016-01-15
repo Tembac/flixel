@@ -5,12 +5,6 @@ package flixel.util;
  */
 class FlxArrayUtil
 {	
-	@:generic
-	public static inline function indexOf<T>(array:Array<T>, whatToFind:T, fromIndex:Int = 0):Int
-	{
-		return array.indexOf(whatToFind, fromIndex);
-	}
-	
 	/**
 	 * Sets the length of an array.
 	 * 
@@ -35,35 +29,6 @@ class FlxArrayUtil
 			}
 			#end
 		}
-	}
-	
-	/**
-	 * Deprecated; please use FlxRandom.shuffleArray() instead.
-	 * Shuffles the entries in an array into a new random order.
-	 * 
-	 * @param	Objects			An array to shuffle.
-	 * @param	HowManyTimes	How many swaps to perform during the shuffle operation.  A good rule of thumb is 2-4 times the number of objects in the list.
-	 * @return	The newly shuffled array.
-	 */
-	@:generic
-	public static inline function shuffle<T>(Objects:Array<T>, HowManyTimes:Int):Array<T>
-	{
-		return FlxRandom.shuffleArray(Objects, HowManyTimes);
-	}
-	
-	/**
-	 * Deprecated; please use FlxRandom.getObject() instead.
-	 * Fetch a random entry from the given array from StartIndex to EndIndex.
-	 * 
-	 * @param	Objects			An array from which to select a random entry.
-	 * @param	StartIndex		Optional index from which to restrict selection. Default value is 0, or the beginning of the array.
-	 * @param	EndIndex		Optional index at which to restrict selection. Ignored if 0, which is the default value.
-	 * @return	The random object that was selected.
-	 */
-	@:generic
-	public static inline function getRandom<T>(Objects:Array<T>, StartIndex:Int = 0, EndIndex:Int = 0):T
-	{
-		return FlxRandom.getObject(Objects, StartIndex, EndIndex);
 	}
 	
 	/**
@@ -136,7 +101,7 @@ class FlxArrayUtil
 			{
 				while (array.length > 0)
 				{
-					var thing:Dynamic = array.pop();
+					var thing:T = array.pop();
 					if (Std.is(thing, Array))
 					{
 						clearArray(array, recursive);
@@ -144,5 +109,62 @@ class FlxArrayUtil
 				}
 			}
 		}
+	}
+	
+	/**
+	 * Flattens 2D arrays into 1D arrays.
+	 * Example: [[1, 2], [3, 2], [1, 1]] -> [1, 2, 3, 2, 1, 1]
+	 */
+	@:generic
+	public static function flatten2DArray<T>(array:Array<Array<T>>):Array<T>
+	{
+		var result = [];
+		
+		for (innerArray in array)
+		{
+			result = result.concat(innerArray);
+		}
+		
+		return result;
+	}
+	
+	/**
+	 * Compares the contents with == to see if the two arrays are the same.
+	 * Also takes null arrays and the length of the arrays into account.
+	 */
+	public static function equals<T>(array1:Array<T>, array2:Array<T>):Bool
+	{
+		if (array1 == null && array2 == null)
+			return true;
+		if (array1 == null && array2 != null)
+			return false;
+		if (array1 != null && array2 == null)
+			return false;
+		if (array1.length != array2.length)
+			return false;
+		
+		for (i in 0...array1.length)
+		{
+			if (array1[i] != array2[i])
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	/**
+	 * Returns the last element of an array or null if the array is null / empty.
+	 */
+	public static function last<T>(array:Array<T>):Null<T>
+	{
+		if (array == null || array.length == 0)
+			return null;
+		return array[array.length - 1];
+	}
+	
+	public static inline function contains<T>(array:Array<T>, element:T):Bool
+	{
+		return array.indexOf(element) != -1;
 	}
 }

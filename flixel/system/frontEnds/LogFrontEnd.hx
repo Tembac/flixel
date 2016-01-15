@@ -1,7 +1,7 @@
 package flixel.system.frontEnds;
 
 import flixel.FlxG;
-import flixel.system.debug.LogStyle;
+import flixel.system.debug.log.LogStyle;
 import flixel.system.FlxAssets;
 import haxe.Log;
 import haxe.PosInfos;
@@ -74,7 +74,11 @@ class LogFrontEnd
 			#if !FLX_NO_SOUND_SYSTEM
 			if (Style.errorSound != null)
 			{
-				FlxG.sound.load(FlxAssets.getSound(Style.errorSound).play());
+				var sound = FlxAssets.getSound(Style.errorSound); 
+				if (sound != null)
+				{
+					FlxG.sound.load(sound).play();
+				}
 			}
 			#end
 			
@@ -83,7 +87,7 @@ class LogFrontEnd
 				FlxG.debugger.visible = true;
 			}
 			
-			if (Style.callbackFunction = null)
+			if (Style.callbackFunction != null)
 			{
 				Style.callbackFunction();
 			}

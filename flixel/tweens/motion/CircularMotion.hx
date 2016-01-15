@@ -1,7 +1,5 @@
 ﻿package flixel.tweens.motion;
 
-import flixel.tweens.FlxTween.TweenOptions;
-
 /**
  * Determines a circular motion.
  */
@@ -56,9 +54,9 @@ class CircularMotion extends Motion
 		return this;
 	}
 
-	override private function update():Void
+	override private function update(elapsed:Float):Void
 	{
-		super.update();
+		super.update(elapsed);
 		angle = _angleStart + _angleFinish * scale;
 		x = _centerX + Math.cos(angle) * _radius;
 		y = _centerY + Math.sin(angle) * _radius;

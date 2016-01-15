@@ -1,7 +1,6 @@
 package flixel.animation;
 
-import flixel.FlxSprite;
-import flixel.interfaces.IFlxDestroyable;
+import flixel.util.FlxDestroyUtil.IFlxDestroyable;
 
 /**
  * ...
@@ -49,7 +48,7 @@ class FlxBaseAnimation implements IFlxDestroyable
 		name = null;
 	}
 	
-	public function update():Void {}
+	public function update(elapsed:Float):Void {}
 	
 	public function clone(Parent:FlxAnimationController):FlxBaseAnimation
 	{

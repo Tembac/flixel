@@ -1,18 +1,12 @@
 package flixel.text;
 
 import flash.display.BitmapData;
-import flash.text.TextField;
-import flash.text.TextFieldAutoSize;
-import flash.text.TextFieldType;
-import flash.text.TextFormatAlign;
 import flixel.FlxBasic;
 import flixel.FlxCamera;
 import flixel.FlxG;
 import flixel.FlxSprite;
-import flixel.system.FlxAssets;
-import flixel.util.FlxColor;
-import flixel.util.FlxPoint;
-import openfl.Assets;
+import flixel.math.FlxMath;
+import flixel.math.FlxPoint;
 
 /**
  * Extends FlxText for better support rendering text on cpp target.
@@ -37,10 +31,10 @@ class FlxTextField extends FlxText
 	{
 		super(X, Y, Width, Text, Size, EmbeddedFont);
 		
-		height = (Text == null || Text.length <= 0) ? 1 : _textField.textHeight + 4;
+		height = (Text == null || Text.length <= 0) ? 1 : textField.textHeight + 4;
 		
-		_textField.multiline = false;
-		_textField.wordWrap = false;
+		textField.multiline = false;
+		textField.wordWrap = false;
 		
 		if (Camera == null)
 		{
@@ -56,9 +50,9 @@ class FlxTextField extends FlxText
 	 */
 	override public function destroy():Void
 	{
-		if (_textField.parent != null)
+		if (textField.parent != null)
 		{
-			_textField.parent.removeChild(_textField);
+			textField.parent.removeChild(textField);
 		}
 		
 		_camera = null;
@@ -76,20 +70,16 @@ class FlxTextField extends FlxText
 		return false;
 	}
 	
-	override public function isSimpleRender():Bool
+	override public function isSimpleRender(?camera:FlxCamera):Bool
 	{
 		// This class doesn't support this operation
 		return true;
 	}
 	
-	/**
-	 * Set pixels to any BitmapData object.
-	 * Automatically adjust graphic size and render helpers.
-	 */
 	override private function get_pixels():BitmapData
 	{
 		calcFrame(true);
-		return cachedGraphics.bitmap;
+		return graphic.bitmap;
 	}
 	
 	override private function set_pixels(Pixels:BitmapData):BitmapData
@@ -100,31 +90,22 @@ class FlxTextField extends FlxText
 	
 	override private function set_alpha(Alpha:Float):Float
 	{
-		if (Alpha > 1)
-		{
-			Alpha = 1;
-		}
-		if (Alpha < 0)
-		{
-			Alpha = 0;
-		}
-		
-		alpha = Alpha;
-		_textField.alpha = alpha;
-		
+		alpha = FlxMath.bound(Alpha, 0, 1);
+		textField.alpha = alpha;
 		return Alpha;
 	}
 	
 	override private function set_height(Height:Float):Float
 	{
 		Height = super.set_height(Height);
-		if (_textField != null)	_textField.height = Height;
+		if (textField != null)
+			textField.height = Height;
 		return Height;
 	}
 	
 	override private function set_visible(Value:Bool):Bool
 	{
-		_textField.visible = Value;
+		textField.visible = Value;
 		return super.set_visible(Value);
 	}
 	
@@ -145,73 +126,52 @@ class FlxTextField extends FlxText
 	 */
 	override public function draw():Void
 	{
-		if (_camera == null)	
+		if (_camera == null)
 		{
 			return;
 		}
 		
 		if (!_addedToDisplay)
 		{
-			#if FLX_RENDER_TILE
-			_camera.canvas.addChild(_textField);
-			#else
-			_camera.flashSprite.addChild(_textField);
-			#end
+			if (FlxG.renderTile)
+			{
+				_camera.canvas.addChild(textField);
+			}
+			else 
+			{
+				_camera.flashSprite.addChild(textField);
+			}
 			
 			_addedToDisplay = true;
-			updateFormat(_defaultFormat);
+			updateDefaultFormat();
 		}
 		
 		if (!_camera.visible || !_camera.exists || !isOnScreen(_camera))
 		{
-			_textField.visible = false;
+			textField.visible = false;
 		}
 		else
 		{
-			_textField.visible = true;
+			textField.visible = true;
 		}
 		
-		_point.x = x - (_camera.scroll.x * scrollFactor.x) - (offset.x);
-		_point.y = y - (_camera.scroll.y * scrollFactor.y) - (offset.y);
+		_point.x = x - (_camera.scroll.x * scrollFactor.x) - offset.x;
+		_point.y = y - (_camera.scroll.y * scrollFactor.y) - offset.y;
 		
-		#if FLX_RENDER_TILE
-		_textField.x = _point.x;
-		_textField.y = _point.y;
-		#else
-		_textField.x = _point.x - FlxG.camera.width * 0.5;
-		_textField.y = _point.y - FlxG.camera.height * 0.5;
-		#end
+		if (FlxG.renderTile)
+		{
+			textField.x = _point.x;
+			textField.y = _point.y;
+		}
+		else
+		{
+			textField.x = (_point.x - 0.5 * _camera.width);
+			textField.y = (_point.y - 0.5 * _camera.height);
+		}
 		
 		#if !FLX_NO_DEBUG
-		FlxBasic._VISIBLECOUNT++;
+		FlxBasic.visibleCount++;
 		#end
-	}
-	
-	override private function regenGraphics():Void
-	{
-		var oldWidth:Float = cachedGraphics.bitmap.width;
-		var oldHeight:Float = cachedGraphics.bitmap.height;
-		
-		var newWidth:Float = _textField.width + _widthInc;
-		var newHeight:Float = _textField.height + _heightInc;
-		
-		if ((oldWidth != newWidth) || (oldHeight != newHeight))
-		{
-			var key:String = cachedGraphics.key;
-			FlxG.bitmap.remove(key);
-			
-			makeGraphic(Std.int(newWidth), Std.int(newHeight), FlxColor.TRANSPARENT, false, key);
-			frameHeight = Std.int(height);
-			_flashRect.x = 0;
-			_flashRect.y = 0;
-			_flashRect.width = newWidth;
-			_flashRect.height = newHeight;
-		}
-		// Else just clear the old buffer before redrawing the text
-		else
-		{
-			cachedGraphics.bitmap.fillRect(_flashRect, FlxColor.TRANSPARENT);
-		}
 	}
 	
 	override private function get_camera():FlxCamera 
@@ -222,29 +182,31 @@ class FlxTextField extends FlxText
 	override private function set_camera(Value:FlxCamera):FlxCamera 
 	{
 		if (_camera != Value)
+			return Value;
+		
+		if (Value != null)
 		{
-			if (Value != null)
+			if (FlxG.renderTile)
 			{
-				#if FLX_RENDER_TILE
-				Value.canvas.addChild(_textField);
-				#else
-				Value.flashSprite.addChild(_textField);
-				#end
-				
-				_addedToDisplay = true;
+				Value.canvas.addChild(textField);
 			}
 			else
 			{
-				if (_camera != null)
-				{
-					_textField.parent.removeChild(_textField);
-				}
-				
-				_addedToDisplay = false;
+				Value.flashSprite.addChild(textField);
 			}
 			
-			_camera = Value;
+			_addedToDisplay = true;
 		}
-		return Value;
+		else
+		{
+			if (_camera != null)
+			{
+				textField.parent.removeChild(textField);
+			}
+			
+			_addedToDisplay = false;
+		}	
+		
+		return _camera = Value;
 	}
 }

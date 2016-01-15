@@ -2,12 +2,9 @@ package flixel.system;
 
 import flixel.FlxBasic;
 import flixel.FlxObject;
-import flixel.group.FlxGroup;
-import flixel.group.FlxSpriteGroup;
-import flixel.group.FlxTypedGroup;
-import flixel.system.FlxCollisionType;
+import flixel.group.FlxGroup.FlxTypedGroup;
+import flixel.math.FlxRect;
 import flixel.util.FlxDestroyUtil;
-import flixel.util.FlxRect;
 
 /**
  * A fairly generic quad tree structure for rapid overlap checks.
@@ -42,22 +39,22 @@ class FlxQuadTree extends FlxRect
 	 * Refers to the internal A and B linked lists,
 	 * which are used to store objects in the leaves.
 	 */
-	private var _headA:FlxList;
+	private var _headA:FlxLinkedList;
 	/**
 	 * Refers to the internal A and B linked lists,
 	 * which are used to store objects in the leaves.
 	 */
-	private var _tailA:FlxList;
+	private var _tailA:FlxLinkedList;
 	/**
 	 * Refers to the internal A and B linked lists,
 	 * which are used to store objects in the leaves.
 	 */
-	private var _headB:FlxList;
+	private var _headB:FlxLinkedList;
 	/**
 	 * Refers to the internal A and B linked lists,
 	 * which are used to store objects in the leaves.
 	 */
-	private var _tailB:FlxList;
+	private var _tailB:FlxLinkedList;
 
 	/**
 	 * Internal, governs and assists with the formation of the tree.
@@ -152,7 +149,7 @@ class FlxQuadTree extends FlxRect
 	/**
 	 * Internal, used during tree processing and overlap checks.
 	 */
-	private static var _iterator:FlxList;
+	private static var _iterator:FlxLinkedList;
 	
 	/**
 	 * Internal, helpers for comparing actual object-to-object overlap - see overlapNode().
@@ -248,14 +245,14 @@ class FlxQuadTree extends FlxRect
 		
 		set(X, Y, Width, Height);
 		
-		_headA = _tailA = FlxList.recycle();
-		_headB = _tailB = FlxList.recycle();
+		_headA = _tailA = FlxLinkedList.recycle();
+		_headB = _tailB = FlxLinkedList.recycle();
 		
 		//Copy the parent's children (if there are any)
 		if (Parent != null)
 		{
-			var iterator:FlxList;
-			var ot:FlxList;
+			var iterator:FlxLinkedList;
+			var ot:FlxLinkedList;
 			if (Parent._headA.object != null)
 			{
 				iterator = Parent._headA;
@@ -264,7 +261,7 @@ class FlxQuadTree extends FlxRect
 					if (_tailA.object != null)
 					{
 						ot = _tailA;
-						_tailA = FlxList.recycle();
+						_tailA = FlxLinkedList.recycle();
 						ot.next = _tailA;
 					}
 					_tailA.object = iterator.object;
@@ -279,7 +276,7 @@ class FlxQuadTree extends FlxRect
 					if (_tailB.object != null)
 					{
 						ot = _tailB;
-						_tailB = FlxList.recycle();
+						_tailB = FlxLinkedList.recycle();
 						ot.next = _tailB;
 					}
 					_tailB.object = iterator.object;
@@ -373,7 +370,7 @@ class FlxQuadTree extends FlxRect
 	{
 		_list = list;
 		
-		var group = FlxGroup.resolveGroup(ObjectOrGroup);
+		var group = FlxTypedGroup.resolveGroup(ObjectOrGroup);
 		if (group != null)
 		{
 			var i:Int = 0;
@@ -385,14 +382,14 @@ class FlxQuadTree extends FlxRect
 				basic = members[i++];
 				if (basic != null && basic.exists)
 				{
-					group = FlxGroup.resolveGroup(basic);
+					group = FlxTypedGroup.resolveGroup(basic);
 					if (group != null)
 					{
 						add(group, list);
 					}
 					else
 					{
-						_object = cast(basic, FlxObject);
+						_object = cast basic;
 						if (_object.exists && _object.allowCollisions != FlxObject.NONE)
 						{
 							_objectLeftEdge = _object.x;
@@ -407,7 +404,7 @@ class FlxQuadTree extends FlxRect
 		}
 		else
 		{
-			_object = cast(ObjectOrGroup, FlxObject);
+			_object = cast ObjectOrGroup;
 			if (_object.exists && _object.allowCollisions != FlxObject.NONE)
 			{
 				_objectLeftEdge = _object.x;
@@ -516,13 +513,13 @@ class FlxQuadTree extends FlxRect
 	 */
 	private function addToList():Void
 	{
-		var ot:FlxList;
+		var ot:FlxLinkedList;
 		if (_list == A_LIST)
 		{
 			if (_tailA.object != null)
 			{
 				ot = _tailA;
-				_tailA = FlxList.recycle();
+				_tailA = FlxLinkedList.recycle();
 				ot.next = _tailA;
 			}
 			_tailA.object = _object;
@@ -532,7 +529,7 @@ class FlxQuadTree extends FlxRect
 			if (_tailB.object != null)
 			{
 				ot = _tailB;
-				_tailB = FlxList.recycle();
+				_tailB = FlxLinkedList.recycle();
 				ot.next = _tailB;
 			}
 			_tailB.object = _object;
@@ -567,7 +564,7 @@ class FlxQuadTree extends FlxRect
 	public function execute():Bool
 	{
 		var overlapProcessed:Bool = false;
-		var iterator:FlxList;
+		var iterator:FlxLinkedList;
 		
 		if (_headA.object != null)
 		{
